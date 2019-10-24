@@ -8,6 +8,8 @@ import numpy as np
 import random
 import math
 import matplotlib.pyplot as plt
+import pandas as pd
+
 class Moea_d(object):
     def __init__(self,benchmark,H,T,V,M,Gen):
         self.benchmark=benchmark            #测试函数的选择
@@ -18,7 +20,7 @@ class Moea_d(object):
         self.Gen=Gen                        #迭代次数
 
     def Population_Init(self,popsize,V):              #种群的初始化
-        if self.benchmark=="ZDT1":
+        if self.benchmark=="ZDT1" or self.benchmark=="ZDT2":
             lb=np.zeros((popsize,V))
             ub=np.ones((popsize,V))
             x=lb+(ub-lb)*np.random.rand(popsize,V)
@@ -31,7 +33,9 @@ class Moea_d(object):
         w2=1-w1
         self.weights[:,0]=w1
         self.weights[:,1]=w2
-        self.weights[np.argwhere(self.weights==0)]=0.00001
+        wh=np.argwhere(self.weights==0)
+        for i in wh:
+            self.weights[i[0],i[1]]=0.0001
         dis=np.zeros((popsize,popsize))
         neighbor=[]
         for i in range(popsize):
@@ -64,9 +68,20 @@ class Moea_d(object):
             f=np.concatenate((F1,F2),axis=1)
             #print([F1,F2])
 
-            return f
+           # return f
+        elif self.benchmark=="ZDT2":
+            F1=x[:,0].reshape(-1,1)
 
-    def evolution(self,x,j):                              #进化算法,选用差分进化算法
+            g=(1+9*(np.sum(x,axis=1)-x[:,0])/(self.V-1)).reshape(-1,1)
+
+            F2=g*(1-np.square(F1/g))
+
+            f=np.concatenate((F1,F2),axis=1)
+
+        return f
+
+
+    def evolution_de(self,x,j):                           #进化算法,选用差分进化算法
         CR=0.5                                            #变异率
         F=0.5                                             #缩放因子
         neighbor=self.neighbor[j]
@@ -94,6 +109,9 @@ class Moea_d(object):
 
         #选择操作
         return newp
+
+
+
 
 
     def fixnew(self,x):                                 #修复超出范围的个体
@@ -129,7 +147,7 @@ class Moea_d(object):
 
         for i in range(self.Gen):
             for j in range(popsize):
-                newp=self.evolution(self.x,j).reshape(1,-1)
+                newp=self.evolution_de(self.x,j).reshape(1,-1)
                 newp=self.fixnew(newp)
 
                 z=np.array(self.evalute(newp))
@@ -143,16 +161,26 @@ class Moea_d(object):
 
 
     def plot_f(self):
-        print(self.y[-1,0],self.y[-1,1])
-        plt.scatter(self.y[:,0],self.y[:,1])
-        plt.show()
+        #print(self.y[:,0],self.y[:,1])
+        if self.benchmark=="ZDT1":
+            zdt1_pf=pd.read_table("../PF/ZDT1.txt",header=None,sep="    ")
+            plt.scatter(zdt1_pf[0],zdt1_pf[1],c="r")
+            plt.scatter(self.y[:,0],self.y[:,1],c="b")
+            plt.show()
+        elif self.benchmark=="ZDT2":
+            zdt2_pf=pd.read_table("../PF/ZDT2.txt",header=None,sep="    ")
+            plt.scatter(zdt2_pf[0],zdt2_pf[1],c="r")
+            plt.scatter(self.y[:,0],self.y[:,1],c="b")
+            plt.show()
 
 
 
 
 if __name__=="__main__":
-    model=Moea_d("ZDT1",100,20,30,2,200)
+   # model=Moea_d("ZDT1",100,20,30,2,300)
+    model=Moea_d("ZDT2",100,20,30,2,300)
     model.Run()
+    print(model.weights)
     model.plot_f()
 
 
