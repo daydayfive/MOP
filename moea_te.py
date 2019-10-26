@@ -178,7 +178,7 @@ class Moea_d(object):
 
 if __name__=="__main__":
    # model=Moea_d("ZDT1",100,20,30,2,300)
-    model=Moea_d("ZDT2",100,20,30,2,300)
+    model=Moea_d("ZDT1",100,20,30,2,200)
     model.Run()
     print(model.weights)
     model.plot_f()

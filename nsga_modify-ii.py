@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 # @author Wu Junjun
 #create time 2019/10/24
-#nsga-ii
+#nsga-ii 对ga交叉跟变异做了一点修改，令变异是基于子代的
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -148,14 +148,17 @@ class NSGA_II(object):
         #二进制交叉
         index=0
         spring_off=np.zeros((self.popsize,self.V))
-        crossover=0
-        mutation=0
-        while(index<self.popsize):
-            if random.random()<0.9:
-                child = random.sample(rran, 2)
-                parent1 = father[child[0], :].reshape(1, -1)
-                parent2 = father[child[1], :].reshape(1, -1)
+        Pc=0.9
+        Pm=0.1
 
+        # crossover=0
+        # mutation=0
+        while(index<self.popsize):
+            child = random.sample(rran, 2)
+            parent1 = father[child[0], :].reshape(1, -1)
+            parent2 = father[child[1], :].reshape(1, -1)
+
+            if random.random()<Pc:
                 u = np.random.rand(2, self.V)
                 gama = np.zeros((2, self.V))
 
@@ -164,36 +167,53 @@ class NSGA_II(object):
 
                 child1 = 0.5 * ((1 + gama[0]) * parent1 + (1 - gama[0]) * parent2)
                 child2 = 0.5 * ((1 - gama[1]) * parent1 + (1 + gama[1]) * parent2)
-                crossover=1
-                mutation=0
+                crossover = 1
+               # mutation = 0
             else:
+                child1=parent1
+                child2=parent2
+               # crossover=0
+              #  mutation=0
+
+            if random.random()<Pm:
                 # 多项式变异
-                parent3 = father[random.randint(0,self.popsize-1), :].reshape(1, -1)
-                u2 = np.random.rand(1, self.V)
-                delta = np.zeros((1, self.V))
+                #parent3 = father[random.randint(0,self.popsize-1), :].reshape(1, -1)
+                u2 = np.random.rand(2, self.V)
+                delta = np.zeros((2, self.V))
 
                 delta[u2 < 0.5] = np.power(2 * u2[u2 < 0.5], 1 / (et2 + 1)) - 1
                 delta[u2 >= 0.5] = 1 - np.power(2 * (1 - u2[u2 >= 0.5]), 1 / (et2 + 1))
 
-                child3 = parent3 + delta
-                crossover=0
-                mutation=1
+                child3 = child1 + delta[0]
+                child4 = child2 + delta[1]
+                #crossover=0
+               # mutation=1
+            else:
+                child3=child1
+                child4=child2
 
-
-            if crossover==1:
-
-                if index + 1 <= self.popsize-1:
-                    spring_off[index, :] = child1
-                    spring_off[index + 1, :] = child2
-                else:
-                    spring_off[index, :] = child1
-                index += 2
-                crossover=0
-
-            elif mutation==1:
+            if index+1<=self.popsize-1:
                 spring_off[index,:]=child3
-                index+=1
-                mutation=0
+                spring_off[index+1,:]=child4
+            else:
+                spring_off[index,:]=child3
+
+            index+=2
+
+            # if crossover==1 and mutation==1:
+            #
+            #     if index + 1 <= self.popsize-1:
+            #         spring_off[index, :] = child1
+            #         spring_off[index + 1, :] = child2
+            #     else:
+            #         spring_off[index, :] = child1
+            #     index += 2
+            #     crossover=0
+            #
+            # elif mutation==1:
+            #     spring_off[index,:]=child3
+            #     index+=1
+            #     mutation=0
 
 
 
@@ -265,6 +285,6 @@ class NSGA_II(object):
 
 
 if __name__=="__main__":
-    model=NSGA_II("ZDT1",100,30,2,2000)
+    model=NSGA_II("ZDT2",100,30,2,2000)
     model.Run()
     model.plot_f()
